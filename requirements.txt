@@ -3,3 +3,4 @@ requests
 pandas
 numpy<2
 pyarrow>=14.0.0
+plotly

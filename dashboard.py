@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 import datetime
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Page Configuration
 st.set_page_config(page_title="Bristol Weather Dashboard", layout="wide")
@@ -77,11 +79,50 @@ def main():
             now = datetime.datetime.now()
             next_24h = df[(df['time'] >= now) & (df['time'] < now + datetime.timedelta(hours=24))]
             
-            st.subheader("Temperature Forecast (Next 24h)")
-            st.line_chart(next_24h.set_index('time')['temperature_2m'])
+            # Create figure with secondary y-axis
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+            # Add Temperature Trace
+            fig.add_trace(
+                go.Scatter(
+                    x=next_24h['time'],
+                    y=next_24h['temperature_2m'],
+                    name="Temperature",
+                    mode="lines+text",
+                    text=["🌡️"] * len(next_24h),
+                    textposition="top center",
+                    line=dict(color="#FF4B4B", width=2),
+                    textfont=dict(size=14)
+                ),
+                secondary_y=False,
+            )
+
+            # Add Precipitation Trace
+            fig.add_trace(
+                go.Scatter(
+                    x=next_24h['time'],
+                    y=next_24h['precipitation_probability'],
+                    name="Precipitation",
+                    mode="text",
+                    text=["🌧️"] * len(next_24h),
+                    textposition="top center",
+                    textfont=dict(size=18)
+                ),
+                secondary_y=True,
+            )
+
+            # Update Layout
+            fig.update_layout(
+                title_text="24h Weather Forecast",
+                height=500,
+                template="plotly_dark",
+                showlegend=False,
+                xaxis=dict(showgrid=False),
+                yaxis=dict(title="Temperature (°C)", showgrid=False),
+                yaxis2=dict(title="Precipitation (%)", showgrid=False, range=[0, 110])
+            )
             
-            st.subheader("Precipitation Probability (Next 24h)")
-            st.bar_chart(next_24h.set_index('time')['precipitation_probability'])
+            st.plotly_chart(fig, use_container_width=True)
             
             with st.expander("View Raw Data"):
                 st.dataframe(df)
